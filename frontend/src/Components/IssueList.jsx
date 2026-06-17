@@ -1,130 +1,72 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import IssueTable from './IssueTable.jsx';
+import IssueAdd from './IssueAdd.jsx';
+import IssueFilter from './IssueFilter.jsx';
 
-function IssueList() {
-  const [tickets, setTickets] = useState([]);
+const IssueList = () => {
+    const [issues, setIssues] = useState([]);
+    const [filterStatus, setFilterStatus] = useState('All');
 
-  // Fetch tickets
-  const fetchTickets = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/tickets");
-      setTickets(res.data);
-    } catch (error) {
-      console.error("Error fetching tickets:", error);
-    }
-  };
-
-  // Delete ticket
-  const deleteTicket = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/api/tickets/${id}`);
-
-      setTickets((prevTickets) =>
-        prevTickets.filter((ticket) => ticket._id !== id)
-      );
-
-      alert("Issue deleted successfully");
-    } catch (error) {
-      console.error("Error deleting issue:", error);
-      alert("Error deleting issue");
-    }
-  };
-
-  // Update status
-  const updateStatus = async (id, newStatus) => {
-    try {
-      await axios.put(`http://localhost:5000/api/tickets/${id}`, {
-        status: newStatus,
-      });
-
-      setTickets((prevTickets) =>
-        prevTickets.map((ticket) =>
-          ticket._id === id
-            ? { ...ticket, status: newStatus }
-            : ticket
-        )
-      );
-
-      alert("Status updated successfully");
-    } catch (error) {
-      console.error("Error updating status:", error);
-      alert("Error updating status");
-    }
-  };
-
-  useEffect(() => {
-    fetchTickets();
-
-    const handler = () => fetchTickets();
-
-    window.addEventListener("ticketCreated", handler);
-
-    return () => {
-      window.removeEventListener("ticketCreated", handler);
+    const fetchIssues = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/issues');
+            const data = await response.json();
+            setIssues(data);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
     };
-  }, []);
 
-  return (
-    <div className="ticket-list">
-      <h2>Issues</h2>
+    useEffect(() => {
+        fetchIssues();
+    }, []);
 
-      {tickets.map((ticket) => (
-        <div key={ticket._id} className="ticket-card">
-          <p>
-            <strong>Title:</strong> {ticket.title}
-          </p>
+    const deleteIssue = async (id) => {
+        try {
+            const response = await fetch(`http://localhost:5000/api/issues/${id}`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                setIssues(issues.filter(issue => issue._id !== id));
+            }
+        } catch (error) {
+            console.error("Error deleting issue:", error);
+        }
+    };
 
-          <p>
-            <strong>Description:</strong> {ticket.description}
-          </p>
+    const filteredIssues = issues.filter(issue => 
+        filterStatus === 'All' ? true : issue.status === filterStatus
+    );
 
-          <p>
-            <strong>Priority:</strong> {ticket.priority}
-          </p>
+    return (
+        <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+            <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Issue Tracker</h1>
+            
+            {/* The main flex container that splits the page layout */}
+            <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+                
+                {/* LEFT COLUMN: Issues Table & Filter */}
+                <div style={{ flex: '2', minWidth: '0' }}>
+                    <IssueFilter setFilterStatus={setFilterStatus} />
+                    <IssueTable issues={filteredIssues} deleteIssue={deleteIssue} />
+                </div>
+                
+                {/* RIGHT COLUMN / CORNER: Create Form */}
+                <div style={{ 
+                    flex: '1', 
+                    backgroundColor: '#f9f9f9', 
+                    padding: '20px', 
+                    borderRadius: '8px', 
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                    position: 'sticky',
+                    top: '20px'
+                }}>
+                    <IssueAdd fetchIssues={fetchIssues} />
+                </div>
 
-          <p>
-            <strong>Status:</strong>{" "}
-            <span
-              className={`status-badge ${
-                ticket.status?.toLowerCase() === "open"
-                  ? "status-open"
-                  : ticket.status?.toLowerCase() === "in progress"
-                  ? "status-in-progress"
-                  : "status-resolved"
-              }`}
-            >
-              {ticket.status}
-            </span>
-          </p>
-
-          <p>
-            <strong>Due:</strong> {ticket.due}
-          </p>
-
-          <div className="ticket-button">
-            <button
-              onClick={() => updateStatus(ticket._id, "resolved")}
-            >
-              Resolve
-            </button>
-
-            <button
-              onClick={() => updateStatus(ticket._id, "in progress")}
-            >
-              In Progress
-            </button>
-
-            <button
-              className="delete-btn"
-              onClick={() => deleteTicket(ticket._id)}
-            >
-              Delete
-            </button>
-          </div>
+            </div>
         </div>
-      ))}
-    </div>
-  );
-}
+    );
+};
 
 export default IssueList;

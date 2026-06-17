@@ -1,119 +1,31 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React from 'react';
+import IssueRow from './IssueRow.jsx';
 
-function IssueTable() {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    priority: "Low",
-    due: "",
-  });
-
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      await axios.post("http://localhost:5000/api/tickets", {
-        title: form.title,
-        description: form.description,
-        priority: form.priority,
-        due: form.due,
-        status: "open",
-      });
-
-      alert("Issue submitted successfully!");
-
-      // Refresh issue list
-      window.dispatchEvent(new Event("ticketCreated"));
-
-      // Reset form
-      setForm({
-        title: "",
-        description: "",
-        priority: "Low",
-        due: "",
-      });
-    } catch (error) {
-      console.error("Error submitting issue:", error);
-      alert("Failed to submit issue");
-    }
-  };
-
-  return (
-    <div className="issue-form-container">
-      <h2>Issue Tracker</h2>
-
-      <form onSubmit={handleSubmit}>
+const IssueTable = ({ issues, deleteIssue }) => {
+    return (
         <div>
-          <label>Title</label>
-          <br />
-          <input
-            type="text"
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            required
-          />
+            <h3>Issues List</h3>
+            {issues.length === 0 ? <p>No issues found.</p> : (
+                <table border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Due</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {issues.map(issue => (
+                            <IssueRow key={issue._id} issue={issue} deleteIssue={deleteIssue} />
+                        ))}
+                    </tbody>
+                </table>
+            )}
         </div>
-
-        <br />
-
-        <div>
-          <label>Description</label>
-          <br />
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            rows="4"
-            required
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>Priority</label>
-          <br />
-          <select
-            name="priority"
-            value={form.priority}
-            onChange={handleChange}
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
-        </div>
-
-        <br />
-
-        <div>
-          <label>Due</label>
-          <br />
-          <input
-            type="text"
-            name="due"
-            value={form.due}
-            onChange={handleChange}
-            placeholder=""
-            required
-          />
-        </div>
-
-        <br />
-
-        <button type="submit">Submit Issue</button>
-      </form>
-    </div>
-  );
-}
+    );
+};
 
 export default IssueTable;
